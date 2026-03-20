@@ -22,11 +22,13 @@ int main() {
 
     double S_T = S_0 * std::exp((r - 0.5 * pow(sigma, 2)) * T + sigma * std::sqrt(T) * Z);
 
-    double payoff = std::max(S_T - S_0, 0.0);
+    double call_payoff = std::max(S_T - K, 0.0);
+    double put_payoff = std::max(K - S_T, 0.0);
 
     std::cout << "Random normal Z: " << Z << std::endl;
     std::cout << "Price at T: " << S_T << std::endl;
-    std::cout << "payoff: " << payoff << std::endl;
+    std::cout << "call payoff: " << call_payoff << std::endl;
+    std::cout << "put payoff: " << put_payoff << std::endl;
 
 
     return 0;
