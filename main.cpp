@@ -22,29 +22,47 @@ int main() {
 
     double call_payoff_sum = 0.0;
     double put_payoff_sum = 0.0;
+    double call_payoff_sq_sum = 0.0;
 
-    for (int i = 0; i < num_simulations; i++) {
+
+    for (int i = 0; i < num_simulations; i++){
 
     double Z = dist(gen);
 
-    double S_T = S_0 * std::exp((r - 0.5 * pow(sigma, 2)) * T + sigma * std::sqrt(T) * Z);
+    double S_T1 = S_0 * std::exp((r - 0.5 * sigma * sigma) * T + sigma * std::sqrt(T) * Z);
+    double S_T2 = S_0 * std::exp((r - 0.5 * sigma * sigma) * T + sigma * std::sqrt(T) * (-Z));
 
-    double call_payoff = std::max(S_T - K, 0.0);
-    double put_payoff = std::max(K - S_T, 0.0);
 
-    call_payoff_sum += call_payoff;
-    put_payoff_sum += put_payoff;
+    double call_payoff_1 = std::max(S_T1 - K, 0.0);
+    double call_payoff_2 = std::max(S_T2 - K, 0.0);
+    
+    double put_payoff_1 = std::max(K - S_T1, 0.0);
+    double put_payoff_2 = std::max(K - S_T2, 0.0);
 
+    double antithetic_call_payoff = 0.5 * (call_payoff_1 + call_payoff_2);
+    double antithetic_put_payoff = 0.5 * (put_payoff_1 + put_payoff_2);
+    
+    call_payoff_sum += antithetic_call_payoff;
+    put_payoff_sum += antithetic_put_payoff;
+    call_payoff_sq_sum += antithetic_call_payoff * antithetic_call_payoff;
     }
 
     double average_call_payoff = call_payoff_sum / num_simulations;
     double average_put_payoff = put_payoff_sum / num_simulations;
     
+    double variance_call_payoff = call_payoff_sq_sum / num_simulations - average_call_payoff * average_call_payoff;
+    double std_dev_call_payoff = std::sqrt(variance_call_payoff);
+    double standard_error_call = std_dev_call_payoff / std::sqrt(num_simulations);
+
+    double confidence_interval_lower = std::exp(-r * T) * average_call_payoff - 1.96 * standard_error_call;
+    double confidence_interval_upper = std::exp(-r * T) * average_call_payoff + 1.96 * standard_error_call;
+
     double call_option_price = std::exp(-r * T) * average_call_payoff;
     double put_option_price = std::exp(-r * T) * average_put_payoff;
     
     double put_call_parity_lhs = call_option_price + K * std::exp(-r * T);
     double put_call_parity_rhs = put_option_price + S_0;
+
 
     // Analytical Black Scholes Prices
 
@@ -64,6 +82,7 @@ int main() {
     std::cout << "put call parity?: " << put_call_parity_lhs << " = " << put_call_parity_rhs << std::endl;
     std::cout << " Analytical BS call price: " << C_ABS << std::endl;
     std::cout << " Analytical BS put price: " << P_ABS << std::endl;
+    std::cout << "95% confidence interval for call option price: [" << confidence_interval_lower << ", " << confidence_interval_upper << "]" << std::endl;
 
     return 0;
 
